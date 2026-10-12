@@ -21,7 +21,7 @@ Run `npm run dev:demo` instead of `npm run dev`. It starts an isolated temporary
 
 - Login and signup: validation, hashed passwords, HttpOnly cookie sessions, successful login toast, default redirect to My profile.
 - Patient dashboard: live appointment/report counts, next appointment card, specialist links, wellness carousel.
-- Book an appointment: specialty filter, doctor choice, live availability, date/time in IST, notes, up to three 5 MB reports, summary and confirmation.
+- Book an appointment: specialty filter, doctor choice, live availability, date/time in IST, notes, up to three reports totaling no more than 3 MB, summary and confirmation.
 - My appointments: patient-owned cards, year filter, upcoming/past/cancelled categories, cancellation, private report downloads.
 - My profile: name, phone, birth date, gender, blood group, address, and profile photo upload.
 - Services: API-loaded hospital services and accessible FAQ accordion.
@@ -93,3 +93,7 @@ Deployment requires a GitHub repository and connected hosting account; local sou
 ## Design references
 
 The palette uses calm teal, sage, cream, and muted pastel accents, inspired by [Color Hunt teal palettes](https://colorhunt.co/palettes/teal). Vite and Tailwind integration follows their official documentation: [Vite](https://vite.dev/guide/) and [Tailwind CSS](https://tailwindcss.com/docs/installation/using-vite).
+
+## Hosting on Vercel
+
+Import the GitHub repository into Vercel. The checked-in vercel.json builds the Vite frontend and routes /api requests to a Node function; all other page URLs fall back to index.html. Set MONGODB_URI (including the carewell database) and a random JWT_SECRET of at least 32 characters as server-only environment variables. Do not use a VITE_ prefix for secrets. Vercel deployment and production domains are accepted through trusted system environment variables; set APP_ORIGIN for an additional custom domain. MongoDB connections are pooled and reused per function instance. Atlas must allow the deployment to connect. Reports are limited to 3 MB combined per booking to stay below Vercel’s function payload limit. Login rate limiting is per warm function instance; use a shared limiter before a larger production rollout.

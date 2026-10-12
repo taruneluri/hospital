@@ -41,7 +41,13 @@ app.use("/api", (req, res, next) => {
       "http://127.0.0.1:5173",
     ].filter(Boolean);
     if (process.env.NODE_ENV === "production") {
-      if (!origin || origin !== process.env.APP_ORIGIN)
+      const deploymentOrigins = [
+        process.env.APP_ORIGIN,
+        ...[process.env.VERCEL_URL, process.env.VERCEL_PROJECT_PRODUCTION_URL]
+          .filter(Boolean)
+          .map((host) => "https://" + host),
+      ];
+      if (!origin || !deploymentOrigins.includes(origin))
         return res
           .status(403)
           .json({ message: "Request origin is not allowed." });
@@ -60,12 +66,10 @@ const loginLimiter = rateLimit({
   message: { message: "Too many attempts. Please try again in 15 minutes." },
 });
 app.get("/api/health", (req, res) =>
-  res
-    .status(mongoose.connection.readyState === 1 ? 200 : 503)
-    .json({
-      ok: mongoose.connection.readyState === 1,
-      demo: process.env.DEMO_MODE === "true",
-    }),
+  res.status(mongoose.connection.readyState === 1 ? 200 : 503).json({
+    ok: mongoose.connection.readyState === 1,
+    demo: process.env.DEMO_MODE === "true",
+  }),
 );
 app.post("/api/auth/signup", loginLimiter, async (req, res) => {
   const data = validate(signupSchema, req.body);
@@ -123,7 +127,7 @@ app.get("/api/availability", auth, async (req, res) => {
 });
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024, files: 3, fields: 6 },
+  limits: { fileSize: 3 * 1024 * 1024, files: 3, fields: 6 },
   fileFilter: (req, file, cb) => {
     if (
       !["application/pdf", "image/jpeg", "image/png"].includes(file.mimetype)
@@ -155,6 +159,13 @@ app.post(
   upload.array("reports", 3),
   async (req, res) => {
     const data = validate(appointmentSchema, req.body);
+    if (
+      (req.files || []).reduce((total, file) => total + file.size, 0) >
+      3 * 1024 * 1024
+    )
+      return res
+        .status(400)
+        .json({ message: "Reports must total no more than 3 MB." });
     if ((req.files || []).some((f) => !validFile(f)))
       return res
         .status(400)
@@ -226,23 +237,19 @@ app.get("/{*path}", (req, res) =>
 );
 app.use((err, req, res, next) => {
   if (err.code === 11000)
-    return res
-      .status(409)
-      .json({
-        message: err.keyPattern?.email
-          ? "An account with this email already exists."
-          : "This time was just booked. Please choose another slot.",
-      });
+    return res.status(409).json({
+      message: err.keyPattern?.email
+        ? "An account with this email already exists."
+        : "This time was just booked. Please choose another slot.",
+    });
   if (err instanceof multer.MulterError)
     return res
       .status(400)
-      .json({ message: "Upload up to 3 reports, each under 5 MB." });
-  res
-    .status(err.status || 500)
-    .json({
-      message: err.status
-        ? err.message
-        : "Something went wrong. Please try again.",
-    });
+      .json({ message: "Upload up to 3 reports, no more than 3 MB in total." });
+  res.status(err.status || 500).json({
+    message: err.status
+      ? err.message
+      : "Something went wrong. Please try again.",
+  });
   if (!err.status) console.error(err.message);
 });

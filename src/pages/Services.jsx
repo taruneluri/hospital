@@ -15,7 +15,7 @@ const faqs = [
   ],
   [
     "What should I bring to my visit?",
-    "Bring your identification and any relevant prescriptions or medical reports. You can upload up to three PDF, JPG, or PNG reports when booking, with a maximum size of 5 MB per file.",
+    "Bring your identification and any relevant prescriptions or medical reports. You can upload up to three PDF, JPG, or PNG reports when booking, with a maximum combined size of 3 MB.",
   ],
   [
     "How do consultation fees work?",

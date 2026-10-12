@@ -64,13 +64,17 @@ export default function Book() {
     const selected = Array.from(e.target.files || []);
     if (
       selected.length > 3 ||
+      selected.reduce((total, file) => total + file.size, 0) >
+        3 * 1024 * 1024 ||
       selected.some(
         (f) =>
-          f.size > 5 * 1024 * 1024 ||
+          f.size > 3 * 1024 * 1024 ||
           !["application/pdf", "image/jpeg", "image/png"].includes(f.type),
       )
     ) {
-      setError("Choose up to 3 PDF, JPG, or PNG reports, each under 5 MB.");
+      setError(
+        "Choose up to 3 PDF, JPG, or PNG reports, no more than 3 MB in total.",
+      );
       e.target.value = "";
       return;
     }
@@ -295,7 +299,7 @@ export default function Book() {
               <FiUploadCloud />
               <strong>Upload medical reports</strong>
               <span>
-                Choose files · PDF, JPG, PNG · Up to 3 files, 5 MB each
+                Choose files · PDF, JPG, PNG · Up to 3 files, 3 MB total
               </span>
               <input
                 type="file"
